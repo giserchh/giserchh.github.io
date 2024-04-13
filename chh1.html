@@ -1,0 +1,203 @@
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>3215706031陈煌辉（实验六）</title>
+
+  <style>
+    html,
+    body,
+    #viewDiv {
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
+    }
+    #header{
+      height:50px;
+      background-color: rgb(0, 255, 8);
+      width: 100%;
+    }
+    #header span{
+      font-size: 40px;
+      line-height: 50px;
+      align-items: center;
+    }
+
+    #title {
+            font-size: 30px;
+            line-height: 60px;
+        }
+
+        #smalltitle {
+            font-size: 10px;
+            color: #666;
+            margin-top: 5px;
+            margin-left: 20px;
+            /* 增加间距 */
+        }
+
+  </style>
+
+  <link rel="stylesheet" href="https://js.arcgis.com/4.29/esri/themes/light/main.css" />
+  <script src="https://js.arcgis.com/4.29/"></script>
+
+  <script>
+    require(["esri/Map",
+      "esri/views/MapView",
+      "esri/layers/FeatureLayer",
+      "esri/widgets/Legend",
+      "esri/widgets/ScaleBar",
+      "esri/widgets/Search",
+      "esri/widgets/LayerList",
+      "esri/widgets/Locate",
+      "esri/rest/locator",
+      "esri/widgets/Measurement",
+      "esri/widgets/AreaMeasurement2D",
+      "esri/widgets/DistanceMeasurement2D",
+
+      "esri/views/SceneView",
+        "esri/layers/TileLayer"
+
+
+    ], (Map, MapView, FeatureLayer, Legend, ScaleBar,Search, LayerList, Locate, locator, Measurement, AreaMeasurement2D,DistanceMeasurement2D) => {
+      const layer = new FeatureLayer({
+        // URL to the service
+        url: "https://www.geosceneonline.cn/server/rest/services/Hosted/hui/FeatureServer/0"
+      });
+
+
+      const layer1 = new FeatureLayer({
+        // URL to the service
+        url: "https://www.geosceneonline.cn/server/rest/services/Hosted/hui/FeatureServer/1"
+      });
+      
+
+      
+      const map = new Map({
+        basemap: "satellite",
+        layers: [layer,layer1]
+      });
+
+      
+
+
+      const view = new MapView({
+        container: "viewDiv",
+        map: map,
+        zoom: 13,
+        center: [119.32, 26.05] // longitude, latitude
+      });
+
+      let legend = new Legend({
+        view: view
+      });
+      view.ui.add(legend, "bottom-right");
+
+      let scaleBar = new ScaleBar({
+        view: view,
+        style: "ruler",
+        unit: "metric"
+      });
+      // Add widget to the bottom left corner of the view
+      view.ui.add(scaleBar, {
+        position: "bottom-left",
+
+      });
+
+      const searchWidget = new Search({
+        view: view
+      });
+      // Adds the search widget below other elements in
+      // the top left corner of the view
+      view.ui.add(searchWidget, {
+        position: "top-right",
+        index: 2
+      });
+
+      view.when(() => {
+          const layerList = new LayerList({
+            view: view
+          });
+
+          // Add widget to the top right corner of the view
+          view.ui.add(layerList, "top-right");
+        });
+
+
+        const locatorUrl = "https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer";
+
+        view.popupEnabled = false;
+                view.on("click", (event) => {
+                    // Get the coordinates of the click on the view
+                    const lat = Math.round(event.mapPoint.latitude * 1000) / 1000;
+                    const lon = Math.round(event.mapPoint.longitude * 1000) / 1000;
+                    view.openPopup({
+                        // Set the popup's title to the coordinates of the location
+                        title: "经度：" + lon + ", 纬度：" + lat,
+                        location: event.mapPoint // Set the location of the popup to the clicked location
+                    });
+                    const params = {
+                        location: event.mapPoint
+                    };
+                    locator
+                        .locationToAddress(locatorUrl, params)
+                        .then((response) => {
+                            // If an address is successfully found, show it in the popup's content
+                            view.popup.content = response.address;
+                        })
+                        .catch(() => {
+                            // If the promise fails and no result is found, show a generic message
+                            view.popup.content = "No address was found for this location";
+                        });
+                });
+               
+                //测量功能--------------------
+                let measurementDistance = new DistanceMeasurement2D({
+                    view: view
+                });
+                view.ui.add(measurementDistance, "bottom-left");
+                //测量功能--------------------
+
+
+
+                const locateBtn = new Locate({
+          view: view
+        });
+
+        // Add the locate widget to the top left corner of the view
+        view.ui.add(locateBtn, {
+          position: "top-left"
+        });
+    });
+  </script>
+</head>
+
+<body>
+  <div id="header">
+    <span>仓山区公共事件</span>
+    <span id="smalltitle">Designed by Chenhuanghui,FAFU</span>
+  
+
+  </div>
+ 
+  <div id="viewDiv"></div>
+
+  <div id="infoDiv">
+    <input
+      class="esri-component esri-widget--button esri-widget esri-interactive"
+      type="button"
+      id="switch-btn"
+      value="3D"
+    />
+  </div>
+  <div id="topbar">
+    <button class="action-button esri-icon-measure-area" id="areaButton" type="button" title="Measure area"></button>
+    <button class="action-button esri-icon-measure-line" id="distanceButton" type="button" title="Measure distance between two or more points"></button>
+  </div>
+
+  
+</body>
+
+</html>
